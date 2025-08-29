@@ -1,56 +1,75 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Vote, Users, Calendar } from "lucide-react"
-
-// Mock data - replace with actual data fetching
-const mockPolls = [
-  {
-    id: "1",
-    title: "What's your favorite programming language?",
-    description: "Help us understand the community's preferences",
-    author: "John Doe",
-    totalVotes: 245,
-    createdAt: "2024-01-15",
-    isActive: true,
-    options: [
-      { id: "1", text: "JavaScript", votes: 89 },
-      { id: "2", text: "Python", votes: 76 },
-      { id: "3", text: "TypeScript", votes: 54 },
-      { id: "4", text: "Go", votes: 26 },
-    ]
-  },
-  {
-    id: "2",
-    title: "Best time for team meetings?",
-    description: "Let's find a time that works for everyone",
-    author: "Jane Smith",
-    totalVotes: 32,
-    createdAt: "2024-01-20",
-    isActive: true,
-    options: [
-      { id: "1", text: "9 AM", votes: 12 },
-      { id: "2", text: "11 AM", votes: 15 },
-      { id: "3", text: "2 PM", votes: 5 },
-    ]
-  }
-]
+import { getPolls } from "@/lib/db"
+import type { Poll } from "@/lib/types"
+import Link from "next/link"
 
 export function PollsList() {
+  const [polls, setPolls] = useState<Poll[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string>("")
+
+  useEffect(() => {
+    loadPolls()
+  }, [])
+
+  const loadPolls = async () => {
+    try {
+      const result = await getPolls({ status: 'active' }) // Only show active polls
+      if (result.success && result.data) {
+        setPolls(result.data)
+      } else {
+        setError(result.error || 'Failed to load polls')
+      }
+    } catch (err) {
+      setError('An unexpected error occurred')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="text-muted-foreground">Loading polls...</div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="text-red-600">{error}</div>
+      </div>
+    )
+  }
+
+  if (polls.length === 0) {
+    return (
+      <div className="text-center py-8">
+        <div className="text-muted-foreground mb-4">
+          No active polls available at the moment.
+        </div>
+      </div>
+    )
+  }
   return (
     <div className="space-y-4">
-      {mockPolls.map((poll) => (
+      {polls.map((poll) => (
         <Card key={poll.id} className="hover:shadow-md transition-shadow">
           <CardHeader>
             <div className="flex items-start justify-between">
               <div className="space-y-1">
-                <CardTitle className="text-lg">{poll.title}</CardTitle>
-                <CardDescription>{poll.description}</CardDescription>
+                <CardTitle className="text-lg">{poll.question}</CardTitle>
+                <CardDescription>{poll.description || 'No description provided'}</CardDescription>
               </div>
-              <Badge variant={poll.isActive ? "default" : "secondary"}>
-                {poll.isActive ? "Active" : "Closed"}
+              <Badge variant={poll.is_active ? "default" : "secondary"}>
+                {poll.is_active ? "Active" : "Closed"}
               </Badge>
             </div>
           </CardHeader>
@@ -59,17 +78,21 @@ export function PollsList() {
               <div className="flex items-center space-x-4 text-sm text-muted-foreground">
                 <div className="flex items-center">
                   <Users className="mr-1 h-4 w-4" />
-                  {poll.totalVotes} votes
+                  {poll.options?.length || 0} options
                 </div>
                 <div className="flex items-center">
                   <Calendar className="mr-1 h-4 w-4" />
-                  {new Date(poll.createdAt).toLocaleDateString()}
+                  {new Date(poll.created_at).toLocaleDateString()}
                 </div>
-                <span>by {poll.author}</span>
+                {poll.expires_at && (
+                  <span>Expires {new Date(poll.expires_at).toLocaleDateString()}</span>
+                )}
               </div>
-              <Button size="sm">
-                <Vote className="mr-2 h-4 w-4" />
-                View Poll
+              <Button size="sm" asChild>
+                <Link href={`/polls/${poll.id}`}>
+                  <Vote className="mr-2 h-4 w-4" />
+                  View Poll
+                </Link>
               </Button>
             </div>
           </CardContent>

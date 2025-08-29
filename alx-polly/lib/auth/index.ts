@@ -1,46 +1,89 @@
-// Authentication utilities and types
-// TODO: Implement with your chosen auth provider (NextAuth.js, Clerk, Auth0, etc.)
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import type { User } from '@supabase/supabase-js';
 
 export interface AuthConfig {
-  // Configuration for your auth provider
+  redirectTo?: string;
 }
 
-export async function signIn(credentials: { email: string; password: string }) {
-  // TODO: Implement sign in logic
-  console.log('Sign in attempt:', credentials)
-  throw new Error('Sign in not implemented yet')
+export interface SignInCredentials {
+  email: string;
+  password: string;
 }
 
-export async function signUp(userData: { 
-  name: string
-  email: string
-  password: string 
-}) {
-  // TODO: Implement sign up logic
-  console.log('Sign up attempt:', userData)
-  throw new Error('Sign up not implemented yet')
+export interface SignUpData {
+  name: string;
+  email: string;
+  password: string;
+}
+
+export async function signIn(credentials: SignInCredentials) {
+  const supabase = createClientComponentClient();
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email: credentials.email,
+    password: credentials.password,
+  });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data;
+}
+
+export async function signUp(userData: SignUpData) {
+  const supabase = createClientComponentClient();
+  const { data, error } = await supabase.auth.signUp({
+    email: userData.email,
+    password: userData.password,
+    options: {
+      data: {
+        full_name: userData.name,
+      },
+    },
+  });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data;
 }
 
 export async function signOut() {
-  // TODO: Implement sign out logic
-  console.log('Sign out')
-  throw new Error('Sign out not implemented yet')
-}
+  const supabase = createClientComponentClient();
+  const { error } = await supabase.auth.signOut();
 
-export async function getCurrentUser() {
-  // TODO: Implement get current user logic
-  console.log('Get current user')
-  return null
-}
-
-export function useAuth() {
-  // TODO: Implement auth hook
-  return {
-    user: null,
-    isLoading: false,
-    isAuthenticated: false,
-    signIn,
-    signUp,
-    signOut,
+  if (error) {
+    throw new Error(error.message);
   }
+}
+
+export async function getCurrentUser(): Promise<User | null> {
+  const supabase = createClientComponentClient();
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
+
+  if (error) {
+    console.error('Error getting user:', error);
+    return null;
+  }
+
+  return user;
+}
+
+export async function getSession() {
+  const supabase = createClientComponentClient();
+  const {
+    data: { session },
+    error,
+  } = await supabase.auth.getSession();
+
+  if (error) {
+    console.error('Error getting session:', error);
+    return null;
+  }
+
+  return session;
 }
