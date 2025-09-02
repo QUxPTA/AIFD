@@ -1,145 +1,74 @@
-'use client';
+"use client"
 
-import { useState, useEffect } from 'react';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { MoreHorizontal, Eye, Edit, Trash2, BarChart3 } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { MoreHorizontal, Eye, Edit, Trash2, BarChart3 } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { useAuth } from '@/contexts/auth-context';
-import { getPolls } from '@/lib/db';
-import type { Poll } from '@/lib/types';
-import Link from 'next/link';
+} from "@/components/ui/dropdown-menu"
+
+// Mock data - replace with actual data fetching
+const mockMyPolls = [
+  {
+    id: "1",
+    title: "Team lunch preferences",
+    description: "Weekly team lunch survey",
+    totalVotes: 12,
+    createdAt: "2024-01-22",
+    isActive: true,
+    responses: 12,
+  },
+  {
+    id: "2",
+    title: "Project feedback survey",
+    description: "Collecting feedback on the latest project release",
+    totalVotes: 45,
+    createdAt: "2024-01-18",
+    isActive: false,
+    responses: 45,
+  },
+]
 
 export function MyPollsList() {
-  const { user } = useAuth();
-  const [polls, setPolls] = useState<Poll[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string>('');
-
-  useEffect(() => {
-    if (user) {
-      loadMyPolls();
-    }
-  }, [user]);
-
-  const loadMyPolls = async () => {
-    try {
-      const result = await getPolls({ creator: user?.id });
-      if (result.success && result.data) {
-        setPolls(result.data);
-      } else {
-        setError(result.error || 'Failed to load polls');
-      }
-    } catch (err) {
-      setError('An unexpected error occurred');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleDelete = async (pollId: string) => {
-    if (!confirm('Are you sure you want to delete this poll? This action cannot be undone.')) {
-      return;
-    }
-
-    try {
-      const response = await fetch(`/api/polls/${pollId}`, {
-        method: 'DELETE',
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        // Remove the deleted poll from the list
-        setPolls(prev => prev.filter(poll => poll.id !== pollId));
-      } else {
-        alert(result.error || 'Failed to delete poll');
-      }
-    } catch (err) {
-      alert('An unexpected error occurred');
-    }
-  };
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-8">
-        <div className="text-muted-foreground">Loading your polls...</div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex items-center justify-center py-8">
-        <div className="text-red-600">{error}</div>
-      </div>
-    );
-  }
-
-  if (polls.length === 0) {
-    return (
-      <div className="text-center py-8">
-        <div className="text-muted-foreground mb-4">
-          You haven't created any polls yet.
-        </div>
-        <Button asChild>
-          <Link href="/dashboard/create-poll">
-            Create Your First Poll
-          </Link>
-        </Button>
-      </div>
-    );
-  }
   return (
-    <div className='space-y-4'>
-      {polls.map((poll) => (
-        <Card key={poll.id} className='hover:shadow-md transition-shadow'>
+    <div className="space-y-4">
+      {mockMyPolls.map((poll) => (
+        <Card key={poll.id} className="hover:shadow-md transition-shadow">
           <CardHeader>
-            <div className='flex items-start justify-between'>
-              <div className='space-y-1'>
-                <CardTitle className='text-lg'>{poll.question}</CardTitle>
-                <CardDescription>{poll.description || 'No description'}</CardDescription>
+            <div className="flex items-start justify-between">
+              <div className="space-y-1">
+                <CardTitle className="text-lg">{poll.title}</CardTitle>
+                <CardDescription>{poll.description}</CardDescription>
               </div>
-              <div className='flex items-center space-x-2'>
-                <Badge variant={poll.is_active ? 'default' : 'secondary'}>
-                  {poll.is_active ? 'Active' : 'Closed'}
+              <div className="flex items-center space-x-2">
+                <Badge variant={poll.isActive ? "default" : "secondary"}>
+                  {poll.isActive ? "Active" : "Closed"}
                 </Badge>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant='ghost' size='icon'>
-                      <MoreHorizontal className='h-4 w-4' />
+                    <Button variant="ghost" size="icon">
+                      <MoreHorizontal className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align='end'>
-                    <DropdownMenuItem asChild>
-                      <Link href={`/dashboard/polls/${poll.id}`}>
-                        <Eye className='mr-2 h-4 w-4' />
-                        View Poll
-                      </Link>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem>
+                      <Eye className="mr-2 h-4 w-4" />
+                      View Poll
                     </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link href={`/polls/${poll.id}`}>
-                        <BarChart3 className='mr-2 h-4 w-4' />
-                        Public View
-                      </Link>
+                    <DropdownMenuItem>
+                      <BarChart3 className="mr-2 h-4 w-4" />
+                      Analytics
                     </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => handleDelete(poll.id)}
-                      className='text-destructive'
-                    >
-                      <Trash2 className='mr-2 h-4 w-4' />
+                    <DropdownMenuItem>
+                      <Edit className="mr-2 h-4 w-4" />
+                      Edit
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="text-destructive">
+                      <Trash2 className="mr-2 h-4 w-4" />
                       Delete
                     </DropdownMenuItem>
                   </DropdownMenuContent>
@@ -148,28 +77,33 @@ export function MyPollsList() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className='flex items-center justify-between'>
-              <div className='flex items-center space-x-4 text-sm text-muted-foreground'>
-                <span>{poll.options?.length || 0} options</span>
-                <span>
-                  Created {new Date(poll.created_at).toLocaleDateString()}
-                </span>
-                {poll.expires_at && (
-                  <span>
-                    Expires {new Date(poll.expires_at).toLocaleDateString()}
-                  </span>
-                )}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+                <span>{poll.responses} responses</span>
+                <span>Created {new Date(poll.createdAt).toLocaleDateString()}</span>
               </div>
-              <Button size='sm' variant='outline' asChild>
-                <Link href={`/dashboard/polls/${poll.id}`}>
-                  <BarChart3 className='mr-2 h-4 w-4' />
-                  View Results
-                </Link>
+              <Button size="sm" variant="outline">
+                <BarChart3 className="mr-2 h-4 w-4" />
+                View Results
               </Button>
             </div>
           </CardContent>
         </Card>
       ))}
+      
+      {mockMyPolls.length === 0 && (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <div className="text-center space-y-2">
+              <h3 className="text-lg font-medium">No polls yet</h3>
+              <p className="text-muted-foreground">
+                Create your first poll to get started
+              </p>
+              <Button className="mt-4">Create Poll</Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
-  );
+  )
 }
